@@ -30,6 +30,7 @@ https://docs.oracle.com/en/database/oracle/oracle-database/19/admin/managing-dat
 📍 Fazendo um update na origem dos dados
 📍 Fechando um database link
 📍 Data Pump Import via database link
+📍 Excluindo um Database Link
 📍 Conclusão
 
 
