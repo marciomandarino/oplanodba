@@ -176,7 +176,7 @@ echo "  • Preparação do Sistema operacional"
 echo "  • Instalação do Oracle 23ai"
 echo "  • Criação de um banco de dados"
 echo ""
-read -n 1 -s -r -p "Pressione qualquer tecla para continuar ou CTRL+C para abortar..."
+read -n 1 -s -r -p "Pressione qualquer tecla para continuar ou CTRL+C para abortar..." < /dev/tty
 echo ""
 echo "Iniciando a instalação..."
 echo ""
