@@ -340,8 +340,24 @@ printf "   %-20s -> IP: ${GREEN}%s${NC}, Porta: ${GREEN}1521${NC}, Serviço: ${G
 echo "======================================================="
 
 
+#############################################
+# Verificação pós instalação
+#############################################
+MAGENTA=$(tput setaf 5)
 
-# Inicializa a flag de verificação pós-instalação
+# Função auxiliar para imprimir cada linha alinhada (":" na coluna 35)
+print_post_line() {
+  local status="$1"
+  local label="$2"
+  local detail="$3"
+  if [ "$status" = "PASS" ]; then
+    status="${GREEN}[PASS]${NC}"
+  else
+    status="${RED}[FAIL]${NC}"
+  fi
+  printf "%-6s %-28s: %s\n" "$status" "$label" "$detail"
+}
+
 post_ok=true
 
 echo "$EQUALS"
@@ -349,7 +365,7 @@ echo "== Verificação pós instalação"
 echo "$EQUALS"
 echo ""
 
-# Verifica se o processo pmon (db_pmon_FREE) está rodando
+# Verificar se o processo pmon (db_pmon_FREE) está rodando
 if ps -ef | grep -v grep | grep -q "pmon_FREE"; then
     print_post_line "PASS" "Processo pmon (db_pmon_FREE)" "Encontrado"
 else
@@ -357,7 +373,7 @@ else
     post_ok=false
 fi
 
-# Verifica se o Listener está rodando
+# Verificar se o Listener está rodando
 if ps -ef | grep -v grep | grep -q "tnslsnr"; then
     print_post_line "PASS" "Listener" "Rodando"
 else
@@ -365,15 +381,14 @@ else
     post_ok=false
 fi
 
-# Verifica o status da instância via SQL*Plus
-# Certifique-se de que a variável ORACLE_HOME esteja definida corretamente.
-
+# Verificar o status da instância via SQL*Plus (executando como usuário oracle)
 instance_status=$(su - oracle -c "export ORACLE_HOME=/opt/oracle/product/23ai/dbhomeFree; sqlplus -S / as sysdba <<'SQLEOF'
 set heading off feedback off verify off;
 select status from v\$instance;
 exit;
 SQLEOF")
-instance_status=$(echo "$instance_status" | xargs)
+instance_status=$(echo "$instance_status" | xargs)  # Remove espaços em branco
+
 if [ "$instance_status" = "OPEN" ]; then
     print_post_line "PASS" "Status da Instância" "$instance_status"
 else
@@ -383,9 +398,11 @@ fi
 
 echo ""
 
-# Exibe mensagem geral
 if $post_ok; then
     echo -e "${MAGENTA}Processo de instalação do Oracle 23ai foi com sucesso!${NC}"
 else
     echo -e "${RED}Processo de instalação do Oracle 23ai falhou. Verifique os itens acima!${NC}"
 fi
+
+
+
