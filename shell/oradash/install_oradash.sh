@@ -69,7 +69,8 @@ fi
 
 # Carrega o ~/.bash_profile para atualizar variáveis e alias
 echo "Carregando $BASH_PROFILE..."
-source "$BASH_PROFILE"
+source ~/.bash_profile
+
 
 echo "Oradash instalado com sucesso em $SCRIPTS_DIR."
 echo "Você pode iniciar o Oradash executando: oradash"
