@@ -201,6 +201,8 @@ exec > >(tee -a "$LOGFILE") 2>&1
 #############################################
 start_total=$(date +%s)
 start_install_time=$(date +'%d/%m/%Y %H:%M:%S')
+SECONDS=0
+
 
 #########################
 # Etapa 1: Preparação do servidor
@@ -311,10 +313,14 @@ echo ""
 #############################################
 # Registrar horário de término da instalação
 #############################################
-end_total=$(date +%s)
 finish_install_time=$(date +'%d/%m/%Y %H:%M:%S')
-duration_total=$(( end_total - start_total ))
-formatted_total=$(convert_seconds "$duration_total")
+duration_minutes=$(( SECONDS / 60 ))
+
+echo "=============================================="
+echo -e "Fim da instalação (Tempo total: ${YELLOW}${duration_minutes} minutos${NC})"
+echo "Início: ${YELLOW}${start_install_time}${NC} | Término: ${YELLOW}${finish_install_time}${NC}"
+echo "=============================================="
+
 
 #############################################
 # Resumo Final da Instalação
