@@ -17,7 +17,7 @@ echo "  • Dar permissão de execução para o script '$ORADASH_SCRIPT'."
 echo "  • Criar um alias 'oradash' no ~/.bash_profile apontando para \$SQLPATH/oradash/oradash.sh."
 echo "  • Carregar o ~/.bash_profile (source) para atualizar as configurações."
 echo
-read -n1 -s -r -p "Pressione qualquer tecla para continuar ou CTRL+C para cancelar..."
+read -n 1 -s -r -p "Pressione qualquer tecla para continuar ou CTRL+C para abortar..." < /dev/tty
 echo
 echo "Iniciando instalação do Oradash..."
 
