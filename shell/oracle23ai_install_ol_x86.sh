@@ -339,24 +339,7 @@ printf "   %-20s -> IP: ${GREEN}%s${NC}, Porta: ${GREEN}1521${NC}, Serviço: ${G
 printf "   %-20s -> IP: ${GREEN}%s${NC}, Porta: ${GREEN}1521${NC}, Serviço: ${GREEN}FREEPDB1${NC}\n" "PDB" "${ip_addr}"
 echo "======================================================="
 
-#############################################
-# Verificação pós instalação
-#############################################
-# Definir cor magenta para sucesso geral
-MAGENTA=$(tput setaf 5)
 
-# Função auxiliar para imprimir cada linha alinhada (":" na coluna 35)
-print_post_line() {
-  local status="$1"
-  local label="$2"
-  local detail="$3"
-  if [ "$status" = "PASS" ]; then
-    status="${GREEN}[PASS]${NC}"
-  else
-    status="${RED}[FAIL]${NC}"
-  fi
-  printf "%-6s %-28s: %s\n" "$status" "$label" "$detail"
-}
 
 # Inicializa a flag de verificação pós-instalação
 post_ok=true
@@ -384,15 +367,13 @@ fi
 
 # Verifica o status da instância via SQL*Plus
 # Certifique-se de que a variável ORACLE_HOME esteja definida corretamente.
-ORACLE_HOME="/opt/oracle/product/23ai/dbhomeFree"
-instance_status=$($ORACLE_HOME/bin/sqlplus -S / as sysdba <<EOF
-set heading off feedback off verify off
+
+instance_status=$(su - oracle -c "export ORACLE_HOME=/opt/oracle/product/23ai/dbhomeFree; sqlplus -S / as sysdba <<'SQLEOF'
+set heading off feedback off verify off;
 select status from v\$instance;
 exit;
-EOF
-)
-instance_status=$(echo "$instance_status" | xargs)  # remove espaços em branco
-
+SQLEOF")
+instance_status=$(echo "$instance_status" | xargs)
 if [ "$instance_status" = "OPEN" ]; then
     print_post_line "PASS" "Status da Instância" "$instance_status"
 else
