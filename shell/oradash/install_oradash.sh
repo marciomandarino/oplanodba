@@ -3,7 +3,7 @@
 
 # Variáveis
 SCRIPTS_DIR="$HOME/scripts"
-ORADASH_ZIP_URL="https://github.com/marciomandarino/oplanodba/raw/refs/heads/main/shell/oradash.zip"
+ORADASH_ZIP_URL="https://github.com/marciomandarino/oplanodba/blob/main/shell/oradash/oradash.zip"
 ORADASH_SCRIPT="$SCRIPTS_DIR/oradash/oradash.sh"
 BASH_PROFILE="$HOME/.bash_profile"
 
