@@ -339,13 +339,72 @@ printf "   %-20s -> IP: ${GREEN}%s${NC}, Porta: ${GREEN}1521${NC}, Serviço: ${G
 printf "   %-20s -> IP: ${GREEN}%s${NC}, Porta: ${GREEN}1521${NC}, Serviço: ${GREEN}FREEPDB1${NC}\n" "PDB" "${ip_addr}"
 echo "======================================================="
 
-############################################################
-# Observação sobre desalinhamento
-############################################################
-# Se ainda houver desalinhamento, é provável que seu terminal
-# (ou fonte) esteja exibindo caracteres acentuados com largura
-# dupla. Para corrigir, experimente:
-#   1. Usar um terminal/fonte que trate acentos como 1 coluna;
-#   2. Remover ou substituir acentos das strings;
-#   3. Aumentar mais o valor em %-28s no print_prereq_line.
-############################################################
+#############################################
+# Verificação pós instalação
+#############################################
+# Definir cor magenta para sucesso geral
+MAGENTA=$(tput setaf 5)
+
+# Função auxiliar para imprimir cada linha alinhada (":" na coluna 35)
+print_post_line() {
+  local status="$1"
+  local label="$2"
+  local detail="$3"
+  if [ "$status" = "PASS" ]; then
+    status="${GREEN}[PASS]${NC}"
+  else
+    status="${RED}[FAIL]${NC}"
+  fi
+  printf "%-6s %-28s: %s\n" "$status" "$label" "$detail"
+}
+
+# Inicializa a flag de verificação pós-instalação
+post_ok=true
+
+echo "$EQUALS"
+echo "== Verificação pós instalação"
+echo "$EQUALS"
+echo ""
+
+# Verifica se o processo pmon (db_pmon_FREE) está rodando
+if ps -ef | grep -v grep | grep -q "pmon_FREE"; then
+    print_post_line "PASS" "Processo pmon (db_pmon_FREE)" "Encontrado"
+else
+    print_post_line "FAIL" "Processo pmon (db_pmon_FREE)" "Não encontrado"
+    post_ok=false
+fi
+
+# Verifica se o Listener está rodando
+if ps -ef | grep -v grep | grep -q "tnslsnr"; then
+    print_post_line "PASS" "Listener" "Rodando"
+else
+    print_post_line "FAIL" "Listener" "Não rodando"
+    post_ok=false
+fi
+
+# Verifica o status da instância via SQL*Plus
+# Certifique-se de que a variável ORACLE_HOME esteja definida corretamente.
+ORACLE_HOME="/opt/oracle/product/23ai/dbhomeFree"
+instance_status=$($ORACLE_HOME/bin/sqlplus -S / as sysdba <<EOF
+set heading off feedback off verify off
+select status from v\$instance;
+exit;
+EOF
+)
+instance_status=$(echo "$instance_status" | xargs)  # remove espaços em branco
+
+if [ "$instance_status" = "OPEN" ]; then
+    print_post_line "PASS" "Status da Instância" "$instance_status"
+else
+    print_post_line "FAIL" "Status da Instância" "Esperado 'OPEN', obtido '$instance_status'"
+    post_ok=false
+fi
+
+echo ""
+
+# Exibe mensagem geral
+if $post_ok; then
+    echo -e "${MAGENTA}Processo de instalação do Oracle 23ai foi com sucesso!${NC}"
+else
+    echo -e "${RED}Processo de instalação do Oracle 23ai falhou. Verifique os itens acima!${NC}"
+fi
