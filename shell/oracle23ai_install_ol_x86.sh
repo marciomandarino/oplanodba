@@ -203,6 +203,9 @@ start_total=$(date +%s)
 start_install_time=$(date +'%d/%m/%Y %H:%M:%S')
 SECONDS=0
 
+echo $start_total
+echo $start_install_time
+date
 
 #########################
 # Etapa 1: Preparação do servidor
