@@ -334,10 +334,30 @@ echo "=============================================="
 # Obter IP (primeiro endereço) em vez do hostname
 ip_addr=$(hostname -I | awk '{print $1}')
 
-echo "=============================================="
-echo -e "Fim da instalação (Tempo total: ${YELLOW}${formatted_total}${NC})"
-echo "Início: ${YELLOW}${start_install_time}${NC} | Término: ${YELLOW}${finish_install_time}${NC}"
-echo "=============================================="
+
+#############################################
+# Registrar horário de término da instalação
+#############################################
+finish_install_time=$(date +'%d/%m/%Y %H:%M:%S')
+
+# Calcular os tempos em minutos para cada etapa
+prep_minutes=$(( duration_prep / 60 ))
+install_minutes=$(( duration_install / 60 ))
+db_minutes=$(( duration_db / 60 ))
+total_minutes=$(( SECONDS / 60 ))
+
+echo "$EQUALS"
+echo "== Resumo da instalação"
+echo "$EQUALS"
+echo ""
+printf "  • %-40s : %s minutos\n" "Preparação do Sistema operacional" "$prep_minutes"
+printf "  • %-40s : %s minutos\n" "Instalação do Oracle 23ai" "$install_minutes"
+printf "  • %-40s : %s minutos\n" "Criação de um banco de dados" "$db_minutes"
+printf "  • %-40s : %s minutos\n" "Tempo total de instalação" "$total_minutes"
+echo ""
+
+
+
 echo ""
 echo "================ Resumo da Instalação ================"
 printf "%-25s: ${GREEN}%s${NC}\n" "Oracle Home" "/opt/oracle/product/23ai/dbhomeFree"
