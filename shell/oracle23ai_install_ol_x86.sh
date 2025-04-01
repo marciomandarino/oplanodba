@@ -199,6 +199,9 @@ exec > >(tee -a "$LOGFILE") 2>&1
 #############################################
 # Registrar horário de início da instalação
 #############################################
+systemctl restart chronyd
+sleep 5
+
 start_total=$(date +%s)
 start_install_time=$(date +'%d/%m/%Y %H:%M:%S')
 SECONDS=0
