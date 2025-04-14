@@ -1,10 +1,11 @@
 ========================================================================================
 == SQL*Plus Easy Connect
 == Marcio Mandarino
-== 27/09/2024
+== 11/02/2025
 == marcio@mrdba.com.br
 == www.mrdba.com.br
 == https://www.linkedin.com/in/marciomandarino/
+== http://mrdba.com.br/oracle_fundamentals
 ========================================================================================
 
 🌎 Referências
@@ -73,10 +74,11 @@ $ sqlplus username/password@host:port/service_name
 ▶️ Conexão direta com serviço especificado:
 
 ▶️ Exemplo de uso:
-$ sqlplus system/"Welcome1"@192.168.68.120:1521/DEV
-$ sqlplus system/"Welcome1"@192.168.68.126:1521/ORCL
-$ sqlplus pdbadmin/"Welcome1"@192.168.68.126:1521/PDB1
-$ sqlplus sys/"Welcome1"@192.168.68.126:1521/CDB1 as sysdba
+$ sqlplus system/"Welcome1"@srvtst01:1521/DEV
+$ sqlplus pdbadmin/"Welcome1"@192.168.68.121:1521/PDB1
+$ sqlplus sys/"Welcome1"@192.168.68.121:1521/CDB1 as sysdba
+$ sqlplus sys/"Welcome1"@srv-scan:1521/rac.localdomain as sysdba
+
 
 
 ==========================================================================================
