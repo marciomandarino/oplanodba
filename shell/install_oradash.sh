@@ -71,6 +71,7 @@ fi
 echo "Carregando $BASH_PROFILE..."
 source "$BASH_PROFILE"
 alias oradash="$SQLPATH/oradash/oradash.sh"
+rm -rf $SQLPATH/oradash.zip
 
 echo "Oradash instalado com sucesso em $SCRIPTS_DIR."
 echo "Você pode iniciar o Oradash executando: oradash"
