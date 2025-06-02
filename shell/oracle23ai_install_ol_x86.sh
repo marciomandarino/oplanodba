@@ -63,10 +63,12 @@ fail_found=false
 # 1. Verificar se é Oracle Linux 8
 prereq_os=false
 if [ -f /etc/os-release ]; then
-    if grep -qi "Oracle Linux" /etc/os-release && grep -q 'VERSION_ID="8' /etc/os-release; then
+    if grep -qi "Oracle Linux" /etc/os-release && \
+       ( grep -q 'VERSION_ID="8' /etc/os-release || grep -q 'VERSION_ID="9' /etc/os-release ); then
         prereq_os=true
     fi
 fi
+
 
 # 2. Verificar se há pelo menos 1,5GB de RAM (1536 MB)
 prereq_mem=false
