@@ -60,13 +60,18 @@ convert_seconds() {
 #############################################
 fail_found=false
 
-# 1. Verificar se é Oracle Linux 8
-prereq_os=false
-if [ -f /etc/os-release ]; then
-    if grep -qi "Oracle Linux" /etc/os-release && \
-       ( grep -q 'VERSION_ID="8' /etc/os-release || grep -q 'VERSION_ID="9' /etc/os-release ); then
-        prereq_os=true
-    fi
+# 1. Obtém nome e versão atuais do SO
+current_name=$(grep '^NAME=' /etc/os-release | cut -d= -f2 | tr -d '"')
+current_ver=$(grep '^VERSION_ID=' /etc/os-release | cut -d= -f2 | tr -d '"')
+current_os="${current_name} ${current_ver}"
+minimum_os="OL8"
+
+# Verifica e imprime Sistema Operacional com o SO atual e o mínimo exigido
+if $prereq_os; then
+    print_prereq_line "PASS" "Sistema Operacional" "${current_os} (mínimo: ${minimum_os})"
+else
+    print_prereq_line "FAIL" "Sistema Operacional" "${current_os} (mínimo: ${minimum_os})"
+    fail_found=true
 fi
 
 
