@@ -1,0 +1,186 @@
+========================================================================================
+== Aula: Instalando Oracle Free 23ai no Oracle Linux 9
+== Nome do autor: Marcio Mandarino
+== Data da geração: 05/05/2025
+== https://www.linkedin.com/in/marciomandarino/
+== https://mrdba.com.br/oracle_fundamentals/
+========================================================================================
+
+
+========================================================================================
+== 🎯 Conceitos Gerais 
+========================================================================================
+▶️ O Oracle Database 23ai Free Edition é Edição gratuita baseada no Oracle 23ai, para testes e desenvolvimento
+▶️ Voltada para DBAs, devs e estudantes que querem praticar sem custo.
+▶️ Inclui recursos avançados com uso restrito e sem licença comercial.
+▶️ Vantagens para DBAs
+	▫️ Ideal para montar laboratórios de estudo e certificação.
+	▫️ Permite testar features novas antes de usar em produção.
+	▫️ Suporte ao Multitenant com 1 CDB e até 3 PDBs.
+	▫️ Funciona em Linux, Windows e máquinas virtuais.
+▶️ Limitações
+	▫️ Limitado a 1 CPU e 2 GB de RAM.
+	▫️ Máximo de 12 GB de dados por PDB.
+	▫️ Sem suporte técnico oficial da Oracle.
+
+
+========================================================================================
+== 🎯 Referências 
+========================================================================================
+https://www.oracle.com/database/free/
+https://docs.oracle.com/en/database/oracle/oracle-database/index.html
+
+# Database Free Installation Guide for Linux 
+https://docs.oracle.com/en/database/oracle/oracle-database/23/xeinl/index.html
+
+# What's New
+https://docs.oracle.com/en/database/oracle/oracle-database/23/nfcoa/index.html
+
+# Download
+https://www.oracle.com/database/free/get-started/
+
+========================================================================================
+== 🎯 Verificações iniciais 
+========================================================================================
+💡 Fique atento se a versão que você está fazendo download é compatível com a o seu SO
+💡 Baixe sempre a versão mais recente do Oracle
+
+
+# cat /etc/oracle-release
+# free -m
+# lscpu
+# df -h
+
+
+
+========================================================================================
+== 🎯 Verificar arquivo host (nome da máquina e IP)
+========================================================================================
+# cat /etc/hosts
+# echo "$(hostname -I | awk '{print $1}') $(hostname | cut -d'.' -f1) $(hostname)" >> /etc/hosts
+# cat /etc/hosts
+
+
+========================================================================================
+== 🎯 Desabilitar SELINUX
+========================================================================================
+# grep -E '^SELINUX=(disabled|enforcing)$' /etc/selinux/config
+# sed -i 's/SELINUX=enforcing/SELINUX=disabled/' /etc/selinux/config
+# grep -E '^SELINUX=(disabled|enforcing)$' /etc/selinux/config
+
+
+========================================================================================
+== 🎯 Desabilitar Firewall
+========================================================================================
+# systemctl stop firewalld
+# systemctl disable firewalld
+
+
+========================================================================================
+== 🎯 Instalar pacotes adicionais
+========================================================================================
+# dnf install -y mlocate net-tools glibc-all-langpacks langpacks-en wget vim
+
+
+========================================================================================
+== 🎯 Atualizar pacotes do sistema operacional
+========================================================================================
+# dnf update -y
+
+
+========================================================================================
+== 🎯 Instalar oracle-database-preinstall-23ai
+========================================================================================
+# dnf -y install oracle-database-preinstall-23ai
+
+
+========================================================================================
+== 🎯 Baixar o Oracle Free 23ai
+========================================================================================
+# curl -L -o /tmp/oracle-database-free-23ai-23.8-1.el9.x86_64.rpm https://download.oracle.com/otn-pub/otn_software/db-free/oracle-database-free-23ai-23.8-1.el9.x86_64.rpm
+
+
+
+========================================================================================
+== 🎯 Instalar o Oracle Free 23ai
+========================================================================================
+# dnf -y localinstall /tmp/oracle-database-free-23ai-23.8-1.el9.x86_64.rpm
+# rm -rf /tmp/oracle-database-free-23ai-23.8-1.el9.x86_64.rpm
+
+
+========================================================================================
+== 🎯 Ajustar local de criação do banco de dados
+========================================================================================
+# cat /etc/sysconfig/oracle-free-23ai.conf
+# sed -i 's|DBFILE_DEST=|DBFILE_DEST=/oradata|' /etc/sysconfig/oracle-free-23ai.conf
+# cat /etc/sysconfig/oracle-free-23ai.conf
+
+
+========================================================================================
+== 🎯 Permissões do diretório /oradata
+========================================================================================
+# mkdir -p /oradata
+# chown -R oracle.oinstall /oradata/
+
+
+========================================================================================
+== 🎯 Criar o banco de dados
+========================================================================================
+# (echo "Welcome1"; echo "Welcome1";) | /etc/init.d/oracle-free-23ai configure
+
+
+========================================================================================
+== 🎯 Usar oraenv para definir variáveis de ambiente
+========================================================================================
+# sudo su - oracle
+$ . oraenv
+
+
+========================================================================================
+== 🎯 Verificar banco de dados criado
+========================================================================================
+$ sqlplus / as sysdba
+
+SQL> set lines 1200
+SQL> col INSTANCE_NAME format a20
+SQL> col HOST_NAME format a20
+SQL> col VERSION_FULL format a20
+SQL> col STATUS format a10
+SQL> col DATABASE_STATUS format a20
+SQL> col EDITION format a10
+
+SQL> SELECT INSTANCE_NAME, HOST_NAME, VERSION_FULL, STARTUP_TIME, STATUS, LOGINS, DATABASE_STATUS, EDITION FROM v$instance;
+
+
+========================================================================================
+== 🎯 Boas práticas
+========================================================================================
+💡 Sempre configure corretamente o arquivo /etc/hosts para evitar problemas de rede.
+💡 Desabilitar SELinux e firewall reduz conflitos com o Oracle, especialmente em ambientes de testes.
+💡 Use o `oracle-database-preinstall-23ai` para preparar o sistema com os parâmetros ideais.
+💡 Após a instalação, valide a criação do banco com uma consulta no v$instance.
+💡 Mantenha o diretório de dados fora da estrutura padrão, como /oradata, para facilitar backups e manutenção.
+
+
+========================================================================================
+== 📎 Anexos
+========================================================================================
+Diretórios e finalidades na instalação do Oracle Free 23ai:
+
+| File Name and Location                                 | Purpose                                                                 |
+|--------------------------------------------------------|-------------------------------------------------------------------------|
+| /opt/oracle                                            | Oracle base: raiz da instalação do Oracle Free                         |
+| /opt/oracle/product/23ai/dbhomeFree                    | Oracle home: binários, executáveis e arquivos de rede                  |
+| /oradata/FREE                               		 	 | Arquivos de dados                                                      |
+| /opt/oracle/diag/...                                   | Logs de diagnóstico (alerta: trace/alert_FREE.log)                     |
+| /opt/oracle/cfgtoollogs/dbca/FREE                      | Log da criação do banco de dados (FREE.log)                            |
+| /etc/sysconfig/oracle-free-23ai.conf                   | Parâmetros padrão de configuração do Oracle                            |
+| /etc/init.d/oracle-free-23ai                           | Script de configuração e inicialização do serviço Oracle               |
+
+========================================================================================
+== 📄 Consultas auxiliares
+========================================================================================
+$ ps -ef | grep [p]mon | awk '{print $NF}' | sed 's/ora_pmon_//'
+
+SQL> SELECT name, open_mode, log_mode FROM v$database;
+SQL> SELECT file_name, tablespace_name FROM dba_data_files;
