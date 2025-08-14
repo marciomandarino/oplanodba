@@ -1,0 +1,176 @@
+========================================================================================
+== Oracle Managed Files (OMF)
+== Marcio Mandarino
+== 06 de agosto de 2025
+== marcio@mrdba.com.br
+== www.mrdba.com.br
+== https://www.linkedin.com/in/marciomandarino/
+========================================================================================
+
+
+🌎 Referências  
+https://docs.oracle.com/en/database/oracle/oracle-database/19/admin/oraasm/oracle-managed-files.html  
+https://docs.oracle.com/en/database/oracle/oracle-database/19/admin/managing-online-redo-logs.html  
+
+
+
+
+=================================================================
+== 🎯 Resumo do vídeo
+=================================================================
+📍 Visão Geral
+📍 DB_CREATE_FILE_DEST
+📍 DB_CREATE_ONLINE_LOG_DEST_n
+📍 Conclusão
+📍 Limpa tudo
+
+
+=================================================================
+== 🎯 Visão Geral
+=================================================================
+▶️ O Oracle Managed Files (OMF) automatiza nomeação e localização de arquivos  
+▶️ Simplifica criação e gerência de datafiles e redo logs  
+▶️ Requer configuração de parâmetros DB_CREATE_FILE_DEST e DB_CREATE_ONLINE_LOG_DEST_n  
+▶️ Suporta tanto filesystem quanto ASM diskgroups  
+💡 Não precisa reiniciar o banco para as configurações entrarem em vigor
+⚠️ Mesmo com o OMF confiugurado, você pode especificar manualmente o nome dos arquivos
+*
+
+=================================================================
+== 🎯 DB_CREATE_FILE_DEST
+=================================================================
+▶️ Define o destino padrão para criação automática de datafiles e tempfiles
+▶️ O arquivo de dados (Caminho e nome) serão criados automaticamente no caminho do DB_CREATE_FILE_DEST
+💡 Se por alguma razão quiser criar arquivos de dados em outra localidade, especifique manualmente
+
+-- Exemplo para ambientes que usam File System
+SQL> ALTER SYSTEM SET DB_CREATE_FILE_DEST = '/u02/oradata' SCOPE=BOTH;
+
+
+-- Criando tablespace usando OMF
+SQL> CREATE TABLESPACE tbs_omf DATAFILE SIZE 100M;  
+SQL> CREATE TEMPORARY TABLESPACE tbs_omf_temp; 
+
+-- Criando tablespace sem OMF
+SQL> CREATE TABLESPACE tbs_normal DATAFILE '/u03/oradata/CDB1/datafile/tbs_normal.dbf' size 100m;
+CREATE TABLESPACE tbs_normal DATAFILE '/u03/oradata/CDB1/datafile/tbs_normal.dbf' size 100m
+*
+ERROR at line 1:
+ORA-01119: error in creating database file '/u03/oradata/CDB1/datafile/tbs_normal.dbf'
+ORA-27040: file create error, unable to create file
+Linux-x86_64 Error: 2: No such file or directory
+Additional information: 1
+
+⚠️ O diretório deve existir e o usuário do oracle deve ter permissão de gravação
+
+SQL> !mkdir /u03/oradata/CDB1/datafile
+SQL> CREATE TABLESPACE tbs_normal DATAFILE '/u03/oradata/CDB1/datafile/tbs_normal.dbf' size 100m;
+
+
+
+-- Incluindo um datafile usando OMF
+SQL> ALTER TABLESPACE  tbs_normal add datafile size 100m;
+
+
+
+SQL> set lines 400
+SQL> col FILE_NAME form a80
+SQL> select tablespace_name, FILE_NAME from dba_data_files where tablespace_name like 'TBS%';
+SQL> select tablespace_name, FILE_NAME from dba_temp_files where tablespace_name like 'TBS_OMF%';
+
+💡 É importante notar que o Oracle cria uma estrutura dentro do diretório do OMF
+
+=================================================================
+== 🎯 DB_CREATE_ONLINE_LOG_DEST_n
+=================================================================
+▶️ O Oracle cria automaticamente membros de redo logs em cada destino configurado  
+▶️ Multiplexação aumenta disponibilidade e proteção contra falhas de disco  
+
+$ mkdir -p /u02/oradata/redo/ /u03/oradata/redo/
+
+-- Exemplo para ambientes que usam File System
+SQL> ALTER SYSTEM SET DB_CREATE_ONLINE_LOG_DEST_1 = '/u02/oradata/redo' SCOPE=BOTH;
+SQL> ALTER SYSTEM SET DB_CREATE_ONLINE_LOG_DEST_2 = '/u03/oradata/redo' SCOPE=BOTH;
+
+
+SQL> ALTER DATABASE ADD LOGFILE GROUP 10 size 200M;
+SQL> ALTER DATABASE ADD LOGFILE size 200M; 
+
+SQL> col a.group# form 999
+SQL> col thread# form 999
+SQL> col "Size (GB)" form 999,99.99
+SQL> col status form a30
+SQL> col MEMBER form a80
+
+
+SQL> SELECT a.group#,
+       thread#,
+       bytes / 1024 / 1024 / 1024 "Size (GB)",
+       a.status,
+       MEMBER
+  FROM v$log a, v$logfile b
+ WHERE a.group# = b.group#
+ order by 1,2;
+*
+
+
+=================================================================
+== 🎯 Ambientes com ASM
+=================================================================
+▶️ O OMF funciona do mesmo jeito em ambientes com ASM
+
+SQL> ALTER SYSTEM SET DB_CREATE_FILE_DEST = '+DATA' SCOPE=BOTH;
+SQL> ALTER SYSTEM SET DB_CREATE_ONLINE_LOG_DEST_2 = '+FRA' SCOPE=BOTH;
+SQL> ALTER SYSTEM SET DB_CREATE_ONLINE_LOG_DEST_3 = '+FRA' SCOPE=BOTH;
+
+
+SQL> CREATE TABLESPACE tbs_omf DATAFILE SIZE 100M;  
+SQL> CREATE TEMPORARY TABLESPACE tbs_omf_temp; 
+
+SQL> set lines 400
+SQL> col FILE_NAME form a80
+SQL> select tablespace_name, FILE_NAME from dba_data_files where tablespace_name like 'TBS%';
+SQL> select tablespace_name, FILE_NAME from dba_temp_files where tablespace_name like 'TBS_OMF%';
+
+SQL> ALTER DATABASE ADD LOGFILE GROUP 10 size 200M;
+SQL> ALTER DATABASE ADD LOGFILE size 200M; 
+
+SQL> col a.group# form 999
+SQL> col thread# form 999
+SQL> col "Size (GB)" form 999,99.99
+SQL> col status form a30
+SQL> col MEMBER form a80
+
+
+SQL> SELECT a.group#,
+       thread#,
+       bytes / 1024 / 1024 / 1024 "Size (GB)",
+       a.status,
+       MEMBER
+  FROM v$log a, v$logfile b
+ WHERE a.group# = b.group#
+ order by 1,2;
+
+
+
+
+=================================================================
+== 🏁 Conclusão
+=================================================================
+▶️ OMF simplifica criação e manutenção de arquivos Oracle  
+▶️ Suporta tanto filesystem quanto ASM diskgroups  
+▶️ Permite multiplexação de redo logs de forma transparente  
+▶️ Reduz necessidade de gestão manual de paths e nomes de arquivos  
+
+
+=================================================================
+== 🧹 Limpa tudo
+=================================================================
+SQL> drop tablespace tbs_omf including contents and datafiles;
+SQL> drop tablespace tbs_omf_temp including contents and datafiles;
+SQL> drop tablespace tbs_normal including contents and datafiles;
+SQL> ALTER DATABASE DROP LOGFILE GROUP 4;
+SQL> ALTER DATABASE DROP LOGFILE GROUP 10;
+SQL> ALTER SYSTEM RESET DB_CREATE_FILE_DEST SCOPE=BOTH;
+SQL> ALTER SYSTEM RESET DB_CREATE_ONLINE_LOG_DEST_1 SCOPE=BOTH;
+SQL> ALTER SYSTEM RESET DB_CREATE_ONLINE_LOG_DEST_2 SCOPE=BOTH;

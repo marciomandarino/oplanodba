@@ -1,0 +1,146 @@
+========================================================================================
+== Oracle Parameter File - Como Criar e Restaurar Backup
+== Marcio Mandarino
+== 07 de agosto de 2025
+== marcio@mrdba.com.br
+== www.mrdba.com.br
+== https://www.linkedin.com/in/marciomandarino/
+========================================================================================
+
+
+=================================================================
+== 🎯 Resumo do vídeo:
+=================================================================
+📍 O que é o SPFILE  
+📍 Backup via RMAN  
+📍 Backup via SQL*Plus  
+📍 Backup via Sistema Operacional  
+📍 Restaurando o SPFILE via PFILE
+📍 Restauração via RMAN  
+📍 Conclusão
+
+
+=================================================================
+== 🎯 Visão Geral
+=================================================================
+▶️ O SPFILE (Server Parameter File) é o arquivo binário que armazena parâmetros de inicialização do banco  
+▶️ Diferente do PFILE, ele é lido diretamente pelo Oracle na inicialização  
+▶️ Fazer backup do SPFILE é essencial para restaurar a configuração em caso de corrupção ou perda  
+▶️ Pode ser feito via RMAN, SQL*Plus ou diretamente no sistema operacional  
+⚠️ Recomenda-se manter cópias do SPFILE junto aos backups regulares do banco
+*
+
+=================================================================
+== 🎯 Backup do SPFILE via RMAN
+=================================================================
+▶️ Método mais recomendado, pois integra o backup do SPFILE com o resto do ambiente  
+▶️ Pode ser feito com o banco aberto ou montado
+
+RMAN> BACKUP SPFILE;
+
+RMAN> BACKUP SPFILE FORMAT '/backup/spfile_%U.bkp';
+
+💡 Também é possível incluir o SPFILE junto com o backup do banco:
+RMAN> BACKUP DATABASE INCLUDE CURRENT CONTROLFILE SPFILE;
+
+=================================================================
+== 🎯 Autobackup
+=================================================================
+▶️ O parâmetro CONTROLFILE AUTOBACKUP faz backup automático do spfile e control file quando um backup é executado
+▶️ O backup do spfile e control file é feito ao final do processo de backup
+
+RMAN> show all;
+RMAN> CONFIGURE CONTROLFILE AUTOBACKUP ON; # default
+RMAN> backup database plus archivelog;
+
+
+=================================================================
+== 🎯 Backup do SPFILE via SQL*Plus
+=================================================================
+▶️ Método alternativo, gerando um PFILE a partir do SPFILE  
+▶️ Útil para criar um backup legível do conteúdo
+
+SQL> CREATE PFILE='/backup/initcdb1.ora' FROM SPFILE;
+
+💡 Para restaurar:
+SQL> CREATE SPFILE FROM PFILE='/u01/backup/initcdb1.ora';
+
+=================================================================
+== 🎯 Backup do SPFILE via Sistema Operacional
+=================================================================
+▶️ Método simples, copiando diretamente o arquivo binário do SPFILE  
+▶️ Pode ser feito com o banco aberto ou fechado  
+▶️ O local do SPFILE pode ser verificado no banco:
+
+SQL> SHOW PARAMETER spfile;
+
+-- Exemplo de saída:
+-- /u01/app/oracle/product/19/dbhome_1/dbs/spfilecdb1.ora
+
+-- Realizando o backup via SO:
+$ cp /u01/app/oracle/product/19c/db_1/dbs/spfilecdb1.ora /backup/spfilecdb1.ora.bkp
+
+💡 Para restaurar, basta inverter a cópia:
+$ cp /backup/spfilecdb1.ora.bkp /u01/app/oracle/product/19c/db_1/dbs/spfilecdb1.ora
+*
+
+=================================================================
+== 🎯 Restaurando o SPFILE via PFILE
+=================================================================
+-- Fazendo backup do spfile
+SQL> create pfile='/tmp/init.ora.bkp' from spfile;
+
+-- Provocando um problema
+SQL> alter system set sga_max_size=40g scope=spfile;
+
+-- Reiniciando o banco
+SQL> shutdown immediate;
+SQL> startup;
+
+-- Restaurando o spfile a partir do backup 
+SQL> startup pfile='/tmp/init.ora.bkp' ;
+SQL> create spfile from pfile='/tmp/init.ora.bkp';
+SQL> shutdown immediate;
+SQL> startup;
+
+
+=================================================================
+== 🎯 Restaurando o SPFILE via RMAN
+=================================================================
+▶️ Caso o SPFILE esteja corrompido ou ausente, é possível restaurá-lo usando RMAN  
+▶️ O banco deve estar no modo NOMOUNT para restaurar o SPFILE
+
+
+$ rm -rf /u01/app/oracle/product/19c/db_1/dbs/spfilecdb1.ora
+$ sqlplus / as sysdba
+SQL> shutdown immediate;
+SQL> startup;
+SQL> exit;
+
+
+$ echo "db_name=cdb1" > /tmp/init.ora
+$ rman target /
+RMAN> startup nomount pfile='/tmp/init.ora';
+-- Restaurando de um backup específico:
+RMAN> RESTORE SPFILE FROM '/backup/spfile_0540hqd5_5_1_1.bkp';
+
+💡 Após restaurar o SPFILE, reinicie o banco normalmente:
+RMAN> SHUTDOWN IMMEDIATE;
+RMAN> STARTUP;
+
+
+=================================================================
+== 💡 Boas Práticas
+=================================================================
+💡 Sempre que fizer alterações no spfile, faça um backup
+💡 Mantenha na rotina de backup do RMAN, uma cópia do spfile
+
+
+=================================================================
+== 🏁 Conclusão
+=================================================================
+▶️ O SPFILE é crítico para a inicialização do Oracle  
+▶️ Sempre mantenha cópias atualizadas  
+▶️ RMAN é a forma mais prática e integrada para backup e restauração  
+▶️ SQL*Plus permite cópia legível para análise ou ajustes manuais  
+▶️ Via SO é rápido e útil para cópias emergenciais

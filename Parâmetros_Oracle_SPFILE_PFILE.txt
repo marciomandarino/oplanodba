@@ -1,0 +1,118 @@
+========================================================================================
+== Parâmetros no Oracle – SPFILE e PFILE
+== Marcio Mandarino
+== 07 de agosto de 2025
+== marcio@mrdba.com.br
+== www.mrdba.com.br
+== https://www.linkedin.com/in/marciomandarino/
+========================================================================================
+
+=================================================================
+== 🎯 Resumo do vídeo:
+=================================================================
+📍 Finalidade do arquivo de inicialização  
+📍 Diferenças entre SPFILE e PFILE  
+📍 SPFILE como padrão de produção  
+📍 Casos específicos para uso de PFILE  
+📍 Exemplos de STARTUP com SPFILE e PFILE  
+📍 Exibindo o parâmetro spfile  
+
+
+=================================================================
+== 🎯 Conteúdo relacionado
+=================================================================
+💡 Diferença entre spfile e pfile
+💡 Parâmetros Estáticos vs Dinâmicos no Oracle
+💡 Backup e Restore do arquivo de parâmetro
+
+
+=================================================================
+== 🎯 Visão Geral
+=================================================================
+▶️ O arquivo de inicialização carrega parâmetros que definem o comportamento do Oracle Database  
+▶️ É lido durante o estágio NOMOUNT para configurar memória, processos, paths e opções diversas  
+▶️ Existem dois tipos de arquivo: 
+   ▫️ PFILE (texto) 
+   ▫️ SPFILE (binário gerenciado pelo servidor)  
+▶️ A partir do Oracle 9i, o SPFILE tornou-se o padrão recomendado em produção  
+▶️ O PFILE só deve ser usado em situações específicas  
+▶️ Normalmente, ficam armazenados no diretório $ORACLE_HOME/dbs/
+*
+
+=================================================================
+== 🎯 Vantagens do spfile
+=================================================================
+💡 Permite mudar parâmetros com ALTER SYSTEM sem reiniciar o banco.
+💡 Salva as mudanças automaticamente no arquivo binário, mantendo-as após reinícios.
+💡 Dispensa edição manual, reduzindo risco de erros.
+💡 Em RAC, um único SPFILE é usado por todas as instâncias.
+💡 Mais seguro: formato binário evita alterações acidentais.
+💡 Funciona com RMAN e OEM para backup/restauração automáticos.
+💡 É carregado automaticamente pela instância, sem precisar indicar caminho.
+
+
+
+=================================================================
+== 🎯 Utilização do SPFILE
+=================================================================
+▶️ SPFILE é o padrão
+▶️ o SPFILE utilizado é definido pelo parâmetro inicilização spfile
+▶️ STARTUP usando o SPFILE padrão:
+SQL> STARTUP;
+
+SQL> SHOW PARAMETER spfile;
+NAME                                 TYPE        VALUE
+------------------------------------ ----------- -----------------------------------------------------
+spfile                               string      /u01/app/oracle/product/19c/db_1/dbs/spfilecdb1.ora
+                                                 
+
+$ sqlplus / as sysdba
+SQL> shutdown immediate;
+SQL> startup nomount 
+SQL> SHOW PARAMETER spfile;
+SQL> exit
+
+$ mv /u01/app/oracle/product/19c/db_1/dbs/spfilecdb1.ora /u01/app/oracle/product/19c/db_1/dbs/spfilecdb1.ora2
+$ sqlplus / as sysdba
+SQL> shutdown immediate;
+SQL> startup nomount;
+SQL> !mv /u01/app/oracle/product/19c/db_1/dbs/spfilecdb1.ora2 /u01/app/oracle/product/19c/db_1/dbs/spfilecdb1.ora
+SQL> startup nomount;
+SQ> ALTER SYSTEM SET db_recovery_file_dest_size = 10G SCOPE=BOTH;
+SQL> exit;
+$ cat /u01/app/oracle/product/19c/db_1/dbs/spfilecdb1.ora
+
+
+=================================================================
+== 🎯 Utilização do PFILE
+=================================================================
+
+$ sqlplus / as sysdba
+SQL> create pfile='/tmp/init.ora' from spfile;
+SQL> shutdown immediate;
+SQL> startup nomount pfile='/tmp/init.ora';
+SQL> ALTER SYSTEM SET db_recovery_file_dest_size = 10G SCOPE=BOTH;
+ALTER SYSTEM SET db_recovery_file_dest_size = 10G SCOPE=BOTH
+*
+ERROR at line 1:
+ORA-32001: write to SPFILE requested but no SPFILE is in use
+
+SQL> EXIT
+
+$ vi /tmp/init.ora
+
+$ sqlplus / as sysdba
+SQL> shutdown immediate;
+SQL> startup nomount pfile='/tmp/init.ora';
+SQL> show parameter db_recovery_file_dest_size
+SQL> show parameter spfile;
+SQL> shutdown immediate;
+SQL> startup;
+
+   
+=================================================================
+== 🏁 Conclusão
+=================================================================
+▶️ SPFILE é o método padrão e recomendado  
+▶️ PFILE só deve ser usado em situações de emergência ou para testes isolados  
+▶️ É importante entender como e quando usar cada arquivo
