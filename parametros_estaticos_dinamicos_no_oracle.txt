@@ -1,0 +1,136 @@
+========================================================================================
+== Parâmetros Estáticos vs Dinâmicos no Oracle
+== Marcio Mandarino
+== 07 de agosto de 2025
+== marcio@mrdba.com.br
+== www.mrdba.com.br
+== https://www.linkedin.com/in/marciomandarino/
+========================================================================================
+
+
+=================================================================
+== 🎯 Resumo do vídeo
+=================================================================
+📍 Visão Geral
+📍 Parâmetros Estáticos
+📍 Parâmetros Dinâmicos
+📍 Uso de MEMORY, SPFILE e BOTH
+📍 Modificando os parâmetros
+📍 Boas Práticas
+📍 Conclusão
+
+
+=================================================================
+== 🎯 Visão Geral
+=================================================================
+▶️ No Oracle, parâmetros de inicialização controlam o comportamento do banco
+▶️ Eles podem ser estáticos ou dinâmicos
+▶️ O impacto e a forma de aplicação dependem de como o parâmetro é alterado:
+   ▫️ MEMORY → afeta apenas a instância em memória (perde ao reiniciar)
+   ▫️ SPFILE → grava no arquivo binário spfile, persistindo após restart
+   ▫️ BOTH → aplica na memória e grava no spfile (persistente)
+▶️ Importante conhecer quais parâmetros exigem reinício e quais entram em vigor de imediato
+*
+
+=================================================================
+== 🎯 Parâmetros Estáticos
+=================================================================
+▶️ São parâmetros que só entram em vigor após o restart da instância
+▶️ Podem ser identificados pela coluna ISSYS_MODIFIABLE (FALSE) na v$parameter
+▶️ Exemplos comuns:
+   ▫️ PROCESSES
+   ▫️ SGA_MAX_SIZE
+   ▫️ CONTROL_FILES
+   ▫️ COMPATIBLE
+   ▫️ DB_FILES
+   ▫️ LOG_BUFFER
+
+▶️ Identificação:
+SQL> col name form a70
+SQL> SELECT name, issys_modifiable 
+       FROM v$parameter
+      WHERE issys_modifiable = 'FALSE' order by 1;
+
+-- 'FALSE' indica que é estático
+
+=================================================================
+== 🎯 Parâmetros Dinâmicos
+=================================================================
+▶️ Podem ser alterados com a instância em funcionamento, não exigindo o restart
+▶️ Podem ser identificados pela coluna ISSYS_MODIFIABLE (IMMEDIATE) na v$parameter
+▶️ Exemplos comuns:
+   ▫️ DB_CREATE_FILE_DEST
+   ▫️ DB_RECOVERY_FILE_DEST
+   ▫️ DB_RECOVERY_FILE_DEST_SIZE
+   ▫️ DB_CREATE_ONLINE_LOG_DEST_1
+   ▫️ DB_CREATE_ONLINE_LOG_DEST_2
+
+▶️ Identificação:
+SQL> col name form a40
+SQL> col value form a60
+SQL> SELECT name, value, issys_modifiable 
+       FROM v$parameter
+      WHERE issys_modifiable = 'IMMEDIATE' order by 1;
+*
+
+=================================================================
+== 🎯 Uso de MEMORY, SPFILE e BOTH
+=================================================================
+▶️ MEMORY → altera apenas a instância em memória (volta ao valor anterior após restart)
+SQL> ALTER SYSTEM SET db_recovery_file_dest_size = 10G SCOPE=MEMORY;
+
+▶️ SPFILE → grava alteração apenas no spfile, válida após próximo restart
+SQL> ALTER SYSTEM SET db_files = 500 SCOPE=SPFILE;
+
+▶️ BOTH → aplica alteração agora e salva no spfile para persistir
+SQL> ALTER SYSTEM SET pga_aggregate_target = 600M SCOPE=BOTH;
+   ▫️ Só é aplicável para parâmetros dinâmicos
+
+SQL> col ISMODIFIED form a30
+SQL> SELECT name, value, issys_modifiable, ISMODIFIED
+       FROM v$parameter where ISMODIFIED = 'SYSTEM_MOD';
+
+
+=================================================================
+== 🎯 Modificando os parâmetros
+=================================================================
+SQl> col name form a30
+SQl> col value form a30
+SQl> SELECT name, value,ISSYS_MODIFIABLE,ISMODIFIED
+from v$parameter 
+where name in 
+('processes',
+'sessions',
+'compatible',
+'db_files',
+'db_create_file_dest',
+'db_recovery_file_dest',
+'db_recovery_file_dest_size',
+'db_create_online_log_dest_1',
+'db_create_online_log_dest_2',
+'pga_aggregate_target'
+);
+
+
+SQL> ALTER SYSTEM SET processes = 800 SCOPE=SPFILE;
+SQL> ALTER SYSTEM SET pga_aggregate_target = 700M scope = memory;
+SQL> ALTER SYSTEM SET db_recovery_file_dest_size = 20G scope = both;
+
+SQL> show parameter processes;
+SQL> show spparameter processes;
+
+
+=================================================================
+== Boas Práticas
+=================================================================
+💡 Mesmo em parâmetros dinâmicos, sempre faça backup do spfile
+💡 Atenção no que você está mudando
+⚠️ Só faça alterações de parâmetros dentro de uma janela de manutenção
+
+
+=================================================================
+== 🏁 Conclusão
+=================================================================
+▶️ Parâmetros estáticos exigem restart para entrar em vigor
+▶️ Parâmetros dinâmicos podem ser alterados com a instância ativa
+▶️ SCOPE define onde e como a alteração será aplicada (MEMORY, SPFILE, BOTH)
