@@ -1,0 +1,136 @@
+========================================================================================
+== Restaurando o PDB inteiro
+== Marcio Mandarino
+== 09 de setembro de 2025
+== marcio@mrdba.com.br
+== www.mrdba.com.br
+== https://www.linkedin.com/in/marciomandarino/
+========================================================================================
+
+
+=================================================================
+== 🎯 Sequência
+=================================================================
+✅ Backup de PDB com RMAN
+✅ Restaurando um arquivo de dados do PDB
+🛠️ Restaurando o PDB inteiro
+⏳ Restaurando um PDB excluído
+
+
+=================================================================
+== 🎯 Visão Geral
+=================================================================
+▶️ Objetivo: restaurar o PDB completo a partir de backup, após perda do um owner
+
+
+=================================================================
+== 🎯 Resumo do vídeo:
+=================================================================
+📍 Abrir sessão extra e observar alert log (ADRCI)
+📍 Pré-checks do PDB e inventário de datafiles
+📍 Criar dados de teste no PDB
+📍 Fazer BACKUP FULL do PDB (pré-condição)
+📍 Simular perda total de datafiles (rm) e verificar erros
+📍 RESTORE/RECOVER do PDB inteiro
+📍 Reabrir o PDB e validar os dados
+📍 Conclusões e limpeza opcional
+
+
+=================================================================
+== 🎯 Sessão extra: acompanhar o ALERT LOG (recomendado)
+=================================================================
+$ adrci
+adrci> set home diag/rdbms/cdb1/cdb1
+adrci> show alert -tail -f
+-- Deixe esta sessão acompanhando o log enquanto executa os testes
+
+
+
+=================================================================
+== 🎯 Criar massa de dados (antes do BACKUP)
+=================================================================
+$ sqlplus / as sysdba
+SQL> alter session set container=PDB1;
+
+-- Usuário e tabela de validação do PDB
+SQL> create user LABPDB identified by "Lab#2025"
+     default tablespace USERS quota unlimited on USERS;
+SQL> grant create session, create table to LABPDB;
+
+SQL> create table LABPDB.T_PDB (id number primary key, payload varchar2(100))
+     tablespace USERS;
+
+SQL> insert into LABPDB.T_PDB
+     select level, rpad('Y',60,'Y') from dual connect by level<=2000;
+SQL> commit;
+
+SQL> select count(*) "Rows_T_PDB" from LABPDB.T_PDB;
+SQL> exit
+
+
+=================================================================
+== 🎯 BACKUP FULL do PDB (pré-condição)
+=================================================================
+$ rman target /
+
+RMAN> BACKUP PLUGGABLE DATABASE PDB1 TAG 'before_update';
+RMAN> LIST BACKUP OF PLUGGABLE DATABASE PDB1;
+RMAN> exit
+
+
+=================================================================
+== 🎯 Simulando perda total de datafiles do PDB
+=================================================================
+$ sqlplus / as sysdba
+SQL> alter session set container = pdb1;
+SQL> select to_char(sysdate,'DD/MM/RRRR HH24:MI:SS'), CURRENT_SCN from v$database;
+SQL> create restore point myrestpoint;
+SQL> drop user LABPDB cascade;
+SQL> exit
+
+
+=================================================================
+== 🎯 RESTORE/RECOVER do PDB inteiro
+=================================================================
+RMAN> ALTER PLUGGABLE DATABASE PDB1 close;
+
+RUN 
+{ 
+     SET UNTIL SCN 2944784; 
+     RESTORE PLUGGABLE DATABASE PDB1; 
+     RECOVER PLUGGABLE DATABASE PDB1; 
+}
+
+RMAN> ALTER PLUGGABLE DATABASE PDB1 open resetlogs; 
+RMAN> exit;
+
+
+=================================================================
+== 🎯 Reabertura do PDB e validações
+=================================================================
+$ sqlplus / as sysdba
+
+SQL> alter session set container=PDB1;
+SQL> select count(*) "Rows_T_PDB" from LABPDB.T_PDB;
+
+SQL> exit
+
+
+
+=================================================================
+== 🏁 Conclusão
+=================================================================
+▶️ Possuindo um backup válido, é possível restaurar um PDB inteiro 
+▶️ Existem vários cenários de recuperação, esse é UM deles
+
+
+=================================================================
+== 🧹 Limpa tudo (opcional)
+=================================================================
+SQL> alter session set container=PDB1;
+SQL> drop user LABPDB cascade;
+SQL> exit
+
+$ rman target /
+RMAN> DELETE NOPROMPT BACKUP TAG 'before_update';
+RMAN> DELETE NOPROMPT OBSOLETE;
